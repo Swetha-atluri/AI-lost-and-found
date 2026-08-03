@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+env/
+.env
+
+# Database & SQLite
+*.db
+*.sqlite3
+
+# Project specific
+backend/uploads/*
+!backend/uploads/.gitkeep
+backend/mock_emails/*
+!backend/mock_emails/.gitkeep
+backend/test_images/*
+!backend/test_images/.gitkeep
+
+# IDEs
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

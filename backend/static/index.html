@@ -1,0 +1,1572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Lost & Found Assistant</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81',
+                        },
+                        dark: {
+                            800: '#1e293b',
+                            900: '#0f172a',
+                            950: '#020617',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts: Inter & Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #020617; /* dark-950 */
+            color: #f8fafc;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Outfit', sans-serif;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+    <!-- React & React DOM (Development) -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <!-- Babel compiler for in-browser JSX compilation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Axios for HTTP Requests -->
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+</head>
+<body class="min-h-screen relative overflow-x-hidden">
+    <!-- Glowing background elements -->
+    <div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-brand-600/10 blur-[120px] pointer-events-none"></div>
+    <div class="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-purple-600/10 blur-[120px] pointer-events-none"></div>
+
+    <div id="root"></div>
+
+    <!-- JSX Code -->
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const getLocalDateTimeString = () => {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        };
+
+        // Custom Inline SVG Icons Component for maximum reliability
+        const Icon = ({ name, className = "w-5 h-5", ...props }) => {
+            const icons = {
+                search: <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
+                plus: <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>,
+                user: <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>,
+                lock: <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>,
+                mail: <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>,
+                home: <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
+                mapPin: <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+                calendar: <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>,
+                checkCircle: <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+                xCircle: <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+                bell: <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>,
+                logout: <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>,
+                shield: <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>,
+                tag: <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M6 20l6.5-6.5A2.5 2.5 0 0012 10.5L6.5 4H4v2.5L10.5 12A2.5 2.5 0 0012 14.5L18.5 21H20v-2.5z" /></svg>,
+                alert: <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+            };
+            return icons[name] || <span className="w-5 h-5 bg-gray-500 rounded-full inline-block"></span>;
+        };
+
+        const MainApp = () => {
+            const [token, setToken] = useState(localStorage.getItem("token") || "");
+            const [user, setUser] = useState(null);
+            const [currentRoute, setCurrentRoute] = useState(window.location.hash || "#/");
+            const [loading, setLoading] = useState(false);
+            const [globalError, setGlobalError] = useState("");
+            const [globalSuccess, setGlobalSuccess] = useState("");
+            
+            // Set Axios authorization header globally
+            if (token) {
+                axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+            } else {
+                delete axios.defaults.headers.common['Authorization'];
+            }
+
+            useEffect(() => {
+                const handleHashChange = () => {
+                    setCurrentRoute(window.location.hash || "#/");
+                    setGlobalError("");
+                    setGlobalSuccess("");
+                };
+                window.addEventListener("hashchange", handleHashChange);
+                return () => window.removeEventListener("hashchange", handleHashChange);
+            }, []);
+
+            useEffect(() => {
+                if (token) {
+                    fetchCurrentUser();
+                } else {
+                    setUser(null);
+                    // Redirect to login if on private routes
+                    if (!["#/", "#/login", "#/register"].includes(currentRoute)) {
+                        window.location.hash = "#/login";
+                    }
+                }
+            }, [token]);
+
+            const fetchCurrentUser = async () => {
+                try {
+                    const res = await axios.get("/api/auth/me");
+                    setUser(res.data);
+                } catch (err) {
+                    logout();
+                }
+            };
+
+            const logout = () => {
+                localStorage.removeItem("token");
+                setToken("");
+                setUser(null);
+                window.location.hash = "#/login";
+            };
+
+            const flashError = (msg) => {
+                setGlobalError(msg);
+                setTimeout(() => setGlobalError(""), 5000);
+            };
+
+            const flashSuccess = (msg) => {
+                setGlobalSuccess(msg);
+                setTimeout(() => setGlobalSuccess(""), 5000);
+            };
+
+            return (
+                <div className="flex flex-col min-h-screen">
+                    {/* Header */}
+                    <header className="sticky top-0 z-40 bg-dark-900/80 backdrop-blur-md border-b border-slate-800/80">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="flex items-center justify-between h-16">
+                                <div className="flex items-center gap-3">
+                                    <div className="bg-gradient-to-tr from-brand-500 to-indigo-600 p-2 rounded-lg shadow-lg shadow-brand-500/20">
+                                        <Icon name="shield" className="w-6 h-6 text-white" />
+                                    </div>
+                                    <span className="font-extrabold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-slate-400">
+                                        Lost & Found <span className="text-brand-500 font-medium">AI</span>
+                                    </span>
+                                </div>
+                                
+                                {user ? (
+                                    <nav className="flex items-center gap-6">
+                                        <a href="#/" className={`text-sm font-medium hover:text-brand-500 transition ${currentRoute === "#/" ? "text-brand-500" : "text-slate-300"}`}>Dashboard</a>
+                                        <a href="#/lost" className={`text-sm font-medium hover:text-brand-500 transition ${currentRoute === "#/lost" ? "text-brand-500" : "text-slate-300"}`}>Lost Items</a>
+                                        <a href="#/found" className={`text-sm font-medium hover:text-brand-500 transition ${currentRoute === "#/found" ? "text-brand-500" : "text-slate-300"}`}>Found Items</a>
+                                        <a href="#/matches" className={`text-sm font-medium hover:text-brand-500 transition ${currentRoute === "#/matches" ? "text-brand-500" : "text-slate-300"}`}>Matches</a>
+                                        <a href="#/mock-emails" className={`text-sm font-medium hover:text-brand-500 transition ${currentRoute === "#/mock-emails" ? "text-brand-500" : "text-slate-300"}`}>Email Inbox</a>
+                                        
+                                        <div className="flex items-center gap-3 border-l border-slate-800 pl-6">
+                                            <div className="flex items-center gap-2 bg-slate-900 px-3 py-1.5 rounded-full border border-slate-800">
+                                                <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                                                <span className="text-xs text-slate-300 font-semibold">{user.username}</span>
+                                            </div>
+                                            <button onClick={logout} className="text-slate-400 hover:text-rose-500 transition p-2 rounded-lg hover:bg-rose-500/10">
+                                                <Icon name="logout" className="w-5 h-5" />
+                                            </button>
+                                        </div>
+                                    </nav>
+                                ) : (
+                                    <div className="flex gap-4">
+                                        <a href="#/login" className="text-slate-300 hover:text-white px-4 py-2 text-sm font-medium">Log In</a>
+                                        <a href="#/register" className="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-lg shadow-brand-600/20">Sign Up</a>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* Flash Notifications */}
+                    <div className="fixed bottom-5 right-5 z-50 flex flex-col gap-3">
+                        {globalError && (
+                            <div className="bg-rose-950/80 backdrop-blur border border-rose-500 text-rose-200 px-4 py-3 rounded-lg flex items-center gap-3 shadow-2xl max-w-sm animate-bounce">
+                                <Icon name="xCircle" className="w-5 h-5 text-rose-500 shrink-0" />
+                                <span className="text-sm font-medium">{globalError}</span>
+                            </div>
+                        )}
+                        {globalSuccess && (
+                            <div className="bg-emerald-950/80 backdrop-blur border border-emerald-500 text-emerald-200 px-4 py-3 rounded-lg flex items-center gap-3 shadow-2xl max-w-sm">
+                                <Icon name="checkCircle" className="w-5 h-5 text-emerald-500 shrink-0" />
+                                <span className="text-sm font-medium">{globalSuccess}</span>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Main Content Area */}
+                    <main className="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+                        {currentRoute === "#/" && <Dashboard token={token} flashError={flashError} />}
+                        {currentRoute === "#/login" && <Login setToken={setToken} flashError={flashError} flashSuccess={flashSuccess} />}
+                        {currentRoute === "#/register" && <Register flashError={flashError} flashSuccess={flashSuccess} />}
+                        {currentRoute === "#/lost" && <LostItems token={token} flashError={flashError} flashSuccess={flashSuccess} />}
+                        {currentRoute === "#/found" && <FoundItems token={token} flashError={flashError} flashSuccess={flashSuccess} />}
+                        {currentRoute === "#/matches" && <Matches token={token} flashError={flashError} flashSuccess={flashSuccess} />}
+                        {currentRoute === "#/mock-emails" && <EmailInbox token={token} />}
+                    </main>
+
+                    {/* Footer */}
+                    <footer className="bg-dark-950 border-t border-slate-900 py-6 text-center text-sm text-slate-500">
+                        &copy; 2026 AI Lost & Found Assistant. Powered by Sentence Transformers, OpenCLIP & FAISS.
+                    </footer>
+                </div>
+            );
+        };
+
+        // --- LANDING PAGE COMPONENT ---
+        const LandingPage = () => {
+            const [simStep, setSimStep] = useState("idle"); // idle, embedding, searching, matched
+            const [progressText, setProgressText] = useState("");
+            const [progressVal, setProgressVal] = useState(0);
+
+            const runSimulation = () => {
+                setSimStep("embedding");
+                setProgressText("Generating semantic vector embeddings (all-MiniLM-L6-v2)...");
+                setProgressVal(15);
+                
+                setTimeout(() => {
+                    setProgressText("Extracting visual features via OpenCLIP (clip-vit-base-patch32)...");
+                    setProgressVal(50);
+                }, 1000);
+
+                setTimeout(() => {
+                    setProgressText("Searching database using FAISS vector indexing...");
+                    setProgressVal(85);
+                }, 2000);
+
+                setTimeout(() => {
+                    setSimStep("matched");
+                    setProgressVal(100);
+                }, 3000);
+            };
+
+            return (
+                <div className="space-y-24 py-10 animate-fade-in">
+                    {/* Hero Section */}
+                    <div className="text-center max-w-4xl mx-auto space-y-6 relative">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/10 border border-brand-500/30 text-brand-400 text-xs font-semibold uppercase tracking-wider mb-2 animate-pulse">
+                            <span className="w-2 h-2 rounded-full bg-brand-500"></span>
+                            AI-Powered Vector Matching Engine
+                        </div>
+                        
+                        <h1 className="text-5xl md:text-6xl font-black tracking-tight leading-none bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-indigo-400">
+                            Smart AI Lost & Found <br />
+                            <span className="bg-clip-text text-transparent bg-gradient-to-r from-brand-400 via-purple-400 to-pink-400">
+                                Assistant Dashboard
+                            </span>
+                        </h1>
+                        
+                        <p className="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
+                            Connecting lost belongings with their owners. Using advanced Sentence-Transformers for semantic text alignment and OpenCLIP for visual comparison to automatically identify match cases in real-time.
+                        </p>
+                        
+                        <div className="flex justify-center gap-4 pt-4">
+                            <a href="#/login" className="bg-brand-600 hover:bg-brand-700 text-white font-semibold px-8 py-3.5 rounded-xl shadow-xl shadow-brand-500/20 hover:shadow-brand-500/30 transition transform hover:-translate-y-0.5 text-sm flex items-center gap-2">
+                                Get Started <span className="text-lg">&rarr;</span>
+                            </a>
+                            <a href="#/register" className="bg-slate-900/80 hover:bg-slate-800 text-slate-300 font-semibold px-8 py-3.5 rounded-xl border border-slate-800 hover:border-slate-700 transition transform hover:-translate-y-0.5 text-sm">
+                                Create Account
+                            </a>
+                        </div>
+                    </div>
+
+                    {/* Live AI Matching Simulator */}
+                    <div className="max-w-4xl mx-auto">
+                        <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 p-8 rounded-3xl shadow-2xl relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-brand-500/5 blur-[80px] pointer-events-none"></div>
+                            
+                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-800/80 pb-6 mb-6">
+                                <div>
+                                    <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                                        <Icon name="shield" className="text-brand-500" /> Interactive AI Simulator
+                                    </h3>
+                                    <p className="text-slate-400 text-sm">Experience how our neural search model links items instantly.</p>
+                                </div>
+                                {simStep !== "idle" && (
+                                    <button 
+                                        onClick={() => setSimStep("idle")} 
+                                        className="text-xs text-slate-500 hover:text-slate-300 transition"
+                                    >
+                                        Reset Simulation
+                                    </button>
+                                )}
+                            </div>
+
+                            {simStep === "idle" && (
+                                <div className="text-center py-12 space-y-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto text-left">
+                                        {/* Lost mockup */}
+                                        <div className="bg-slate-950/80 border border-slate-900 p-5 rounded-2xl space-y-3">
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">Lost Item Report</span>
+                                                <span className="text-slate-600 text-xs">Owner: Swetha</span>
+                                            </div>
+                                            <h4 className="font-semibold text-white">Blue Canvas Backpack</h4>
+                                            <p className="text-xs text-slate-400 line-clamp-2">A dark blue canvas bag containing a silver laptop, charger cables, and a black notebook.</p>
+                                            <div className="h-28 bg-slate-900 rounded-lg flex items-center justify-center border border-slate-805 text-slate-600">
+                                                <Icon name="tag" className="w-8 h-8 text-blue-500/40" />
+                                            </div>
+                                        </div>
+                                        {/* Found mockup */}
+                                        <div className="bg-slate-950/80 border border-slate-900 p-5 rounded-2xl space-y-3">
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">Found Item Log</span>
+                                                <span className="text-slate-600 text-xs">Finder: Charlie</span>
+                                            </div>
+                                            <h4 className="font-semibold text-white">Navy Blue Backpack</h4>
+                                            <p className="text-xs text-slate-400 line-clamp-2">Found a blue school bag with laptop accessories and computer charging cables near the cafeteria.</p>
+                                            <div className="h-28 bg-slate-900 rounded-lg flex items-center justify-center border border-slate-805 text-slate-600">
+                                                <Icon name="tag" className="w-8 h-8 text-amber-500/40" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        onClick={runSimulation}
+                                        className="bg-brand-600/10 hover:bg-brand-600 border border-brand-500/30 hover:border-brand-500 text-brand-400 hover:text-white font-semibold px-6 py-2.5 rounded-xl transition text-sm shadow-lg shadow-brand-500/5 hover:shadow-brand-500/20"
+                                    >
+                                        Run AI Matching Scan
+                                    </button>
+                                </div>
+                            )}
+
+                            {(simStep === "embedding" || simStep === "searching") && (
+                                <div className="py-16 text-center space-y-6 animate-pulse">
+                                    <div className="w-16 h-16 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                                    <div className="space-y-2 max-w-md mx-auto">
+                                        <p className="text-sm font-semibold text-white">{progressText}</p>
+                                        <div className="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800">
+                                            <div className="bg-brand-500 h-full transition-all duration-500" style={{ width: `${progressVal}%` }}></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {simStep === "matched" && (
+                                <div className="space-y-6 animate-fade-in">
+                                    <div className="text-center">
+                                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-2">
+                                            <Icon name="checkCircle" className="w-3.5 h-3.5" /> High Confidence Match
+                                        </div>
+                                        <h4 className="text-3xl font-black text-white">87% Similarity Score</h4>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative">
+                                        {/* Connector line */}
+                                        <div className="hidden md:block absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-blue-500 to-amber-500 h-1 w-24 rounded-full z-0 opacity-40"></div>
+                                        
+                                        <div className="bg-slate-950/80 border border-blue-500/20 p-5 rounded-2xl space-y-3 z-10">
+                                            <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">Lost Item (Swetha)</span>
+                                            <h5 className="font-semibold text-white">Blue Canvas Backpack</h5>
+                                            <p className="text-xs text-slate-400">"A dark blue canvas bag containing a silver laptop, charger cables, and a black notebook."</p>
+                                        </div>
+                                        <div className="bg-slate-950/80 border border-amber-500/20 p-5 rounded-2xl space-y-3 z-10">
+                                            <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">Found Item (Charlie)</span>
+                                            <h5 className="font-semibold text-white">Navy Blue Backpack</h5>
+                                            <p className="text-xs text-slate-400">"Found a blue school bag with laptop accessories and computer charging cables near the cafeteria."</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-emerald-950/20 border border-emerald-500/20 p-4 rounded-2xl text-center text-xs text-emerald-400">
+                                        📧 <strong>Mock Email Alert Generated:</strong> Swetha was notified about Charlie's report via automated matching cron daemon!
+                                    </div>
+
+                                    <div className="text-center">
+                                        <button 
+                                            onClick={runSimulation}
+                                            className="text-xs text-slate-400 hover:text-white transition underline"
+                                        >
+                                            Re-run Test Scan
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Features Grid */}
+                    <div className="space-y-12">
+                        <div className="text-center space-y-3">
+                            <h2 className="text-3xl font-extrabold text-white">Advanced AI Architecture</h2>
+                            <p className="text-slate-400 max-w-xl mx-auto">Using multi-modal machine learning pipelines to solve the retrieval problem.</p>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            {[
+                                { title: "Semantic NLP", desc: "Transforms item descriptions into 384-dimensional text vectors using sentence-transformers (all-MiniLM-L6-v2). Matches meanings, not just matching words.", icon: "search", color: "from-blue-500/20 to-blue-600/5 text-blue-400" },
+                                { title: "CLIP Vision AI", desc: "Computes image embedding vectors via OpenAI's CLIP model. Resolves spatial, color, and object similarity to link visual evidence.", icon: "tag", color: "from-purple-500/20 to-purple-600/5 text-purple-400" },
+                                { title: "FAISS Vector Index", desc: "Stores high-dimensional vectors in Facebook AI Similarity Search indexes. Queries thousands of vectors in sub-milliseconds.", icon: "shield", color: "from-pink-500/20 to-pink-600/5 text-pink-400" },
+                                { title: "Instant Alerts", desc: "An automated daemon runs in the background checking every new found item, instantly dispatching mock email alerts to coordinate claims.", icon: "bell", color: "from-amber-500/20 to-amber-600/5 text-amber-400" }
+                            ].map((feat, i) => (
+                                <div key={i} className="bg-slate-900/30 backdrop-blur border border-slate-800/80 p-6 rounded-2xl flex flex-col justify-between hover:border-slate-700/80 hover:-translate-y-1 transition duration-300">
+                                    <div className="space-y-3">
+                                        <div className={`w-10 h-10 rounded-lg bg-gradient-to-tr ${feat.color} flex items-center justify-center border border-white/5`}>
+                                            <Icon name={feat.icon} />
+                                        </div>
+                                        <h4 className="text-md font-bold text-white">{feat.title}</h4>
+                                        <p className="text-slate-400 text-xs leading-relaxed">{feat.desc}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* How It Works */}
+                    <div className="space-y-12">
+                        <div className="text-center space-y-3">
+                            <h2 className="text-3xl font-extrabold text-white">How It Works</h2>
+                            <p className="text-slate-400 max-w-xl mx-auto">Get your lost items back in three simple steps.</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto relative">
+                            {[
+                                { step: "01", title: "Report Items", desc: "Submit details of a lost item or log found properties in a simple form. Add photos to get visual matching." },
+                                { step: "02", title: "Instant Match Run", desc: "The background AI engine instantly converts reports to embedding vectors and checks similarity." },
+                                { step: "03", title: "Claim & Recover", desc: "Review matched items, approve claims, mock email notifies the stakeholders, and recover details." }
+                            ].map((step, i) => (
+                                <div key={i} className="bg-slate-900/20 border border-slate-800 p-6 rounded-2xl relative space-y-3">
+                                    <span className="text-4xl font-black text-brand-500/20 absolute top-4 right-4">{step.step}</span>
+                                    <h4 className="text-lg font-bold text-white">{step.title}</h4>
+                                    <p className="text-slate-400 text-xs leading-relaxed">{step.desc}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- DASHBOARD COMPONENT ---
+        const Dashboard = ({ token, flashError }) => {
+            const [stats, setStats] = useState({ lost: 0, found: 0, matches: 0, claimed: 0 });
+            const [recentLost, setRecentLost] = useState([]);
+            const [recentMatches, setRecentMatches] = useState([]);
+
+            useEffect(() => {
+                if (token) {
+                    fetchData();
+                }
+            }, [token]);
+
+            const fetchData = async () => {
+                try {
+                    const [lostRes, foundRes, matchRes] = await Promise.all([
+                        axios.get("/api/items/lost"),
+                        axios.get("/api/items/found"),
+                        axios.get("/api/matches")
+                    ]);
+                    
+                    const lostCount = lostRes.data.length;
+                    const foundCount = foundRes.data.length;
+                    const matchesCount = matchRes.data.length;
+                    const claimedCount = lostRes.data.filter(i => i.status === "claimed").length;
+
+                    setStats({
+                        lost: lostCount,
+                        found: foundCount,
+                        matches: matchesCount,
+                        claimed: claimedCount
+                    });
+
+                    setRecentLost(lostRes.data.slice(0, 4));
+                    setRecentMatches(matchRes.data.slice(0, 3));
+                } catch (err) {
+                    flashError("Could not retrieve dashboard metrics.");
+                }
+            };
+
+            if (!token) {
+                return <LandingPage />;
+            }
+
+            return (
+                <div className="space-y-8 animate-fade-in">
+                    <div>
+                        <h2 className="text-3xl font-extrabold tracking-tight text-white mb-2">Welcome Back!</h2>
+                        <p className="text-slate-400">Manage reported cases and monitor active automatic match triggers.</p>
+                    </div>
+
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {[
+                            { label: "Lost Items Reported", val: stats.lost, icon: "search", color: "from-blue-600 to-blue-400 shadow-blue-500/10" },
+                            { label: "Found Items Logged", val: stats.found, icon: "plus", color: "from-amber-600 to-amber-400 shadow-amber-500/10" },
+                            { label: "Potential AI Matches", val: stats.matches, icon: "bell", color: "from-brand-600 to-brand-400 shadow-brand-500/10" },
+                            { label: "Claimed & Rescued", val: stats.claimed, icon: "checkCircle", color: "from-emerald-600 to-emerald-400 shadow-emerald-500/10" }
+                        ].map((card, i) => (
+                            <div key={i} className="bg-slate-900/60 backdrop-blur-md border border-slate-800/80 p-6 rounded-2xl flex items-center justify-between shadow-xl">
+                                <div>
+                                    <span className="text-slate-400 text-sm font-semibold">{card.label}</span>
+                                    <h3 className="text-3xl font-black text-white mt-1">{card.val}</h3>
+                                </div>
+                                <div className={`p-3.5 rounded-xl bg-gradient-to-tr ${card.color} text-white shadow-lg`}>
+                                    <Icon name={card.icon} className="w-6 h-6" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Quick Report Bar */}
+                    <div className="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-4">
+                        <div>
+                            <h3 className="text-lg font-bold text-white">Need to report a new case?</h3>
+                            <p className="text-slate-400 text-sm">Create lost item entries or log found properties to fire AI engine searches.</p>
+                        </div>
+                        <div className="flex gap-4">
+                            <a href="#/lost" className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-2.5 rounded-xl transition flex items-center gap-2">
+                                <Icon name="plus" /> Report Lost Item
+                            </a>
+                            <a href="#/found" className="bg-amber-600 hover:bg-amber-700 text-white font-semibold px-5 py-2.5 rounded-xl transition flex items-center gap-2">
+                                <Icon name="plus" /> Report Found Item
+                            </a>
+                        </div>
+                    </div>
+
+                    {/* Dual Listing Sections */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        {/* Recent Lost items */}
+                        <div className="bg-slate-900/40 border border-slate-900 p-6 rounded-2xl space-y-4">
+                            <div className="flex justify-between items-center">
+                                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                                    <Icon name="search" className="text-blue-500" /> Recent Lost Listings
+                                </h3>
+                                <a href="#/lost" className="text-sm text-brand-500 hover:underline">View All</a>
+                            </div>
+                            
+                            <div className="space-y-3">
+                                {recentLost.length === 0 ? (
+                                    <div className="text-center py-6 text-slate-500 text-sm">No items reported.</div>
+                                ) : (
+                                    recentLost.map(item => (
+                                        <div key={item.id} className="bg-slate-900/80 border border-slate-800 p-4 rounded-xl flex items-center gap-4 hover:border-slate-700 transition">
+                                            {item.image_path ? (
+                                                <img src={"/" + item.image_path} alt={item.name} className="w-12 h-12 rounded-lg object-cover border border-slate-700" />
+                                            ) : (
+                                                <div className="w-12 h-12 bg-slate-850 rounded-lg flex items-center justify-center border border-slate-800 text-slate-500">
+                                                    <Icon name="tag" />
+                                                </div>
+                                            )}
+                                            <div className="flex-grow">
+                                                <h4 className="text-sm font-semibold text-white">{item.name}</h4>
+                                                <p className="text-xs text-slate-400 truncate max-w-[200px]">{item.description}</p>
+                                            </div>
+                                            <div className="text-right">
+                                                <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${
+                                                    item.status === "claimed" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
+                                                    item.status === "matched" ? "bg-purple-500/10 text-purple-400 border border-purple-500/20" :
+                                                    "bg-blue-500/10 text-blue-400 border border-blue-500/20"
+                                                }`}>
+                                                    {item.status}
+                                                </span>
+                                                <p className="text-[10px] text-slate-500 mt-1">{new Date(item.date_lost).toLocaleDateString()}</p>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Recent Matches */}
+                        <div className="bg-slate-900/40 border border-slate-900 p-6 rounded-2xl space-y-4">
+                            <div className="flex justify-between items-center">
+                                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                                    <Icon name="bell" className="text-purple-500" /> Recent AI Matches
+                                </h3>
+                                <a href="#/matches" className="text-sm text-brand-500 hover:underline">View All</a>
+                            </div>
+
+                            <div className="space-y-3">
+                                {recentMatches.length === 0 ? (
+                                    <div className="text-center py-6 text-slate-500 text-sm">No matches triggered yet. Submit items to fire the engine!</div>
+                                ) : (
+                                    recentMatches.map(match => (
+                                        <div key={match.id} className="bg-slate-900/80 border border-slate-800 p-4 rounded-xl flex items-center justify-between hover:border-slate-700 transition">
+                                            <div className="flex items-center gap-3">
+                                                <span className="text-sm font-semibold text-white">Lost {match.lost_item.name}</span>
+                                                <span className="text-slate-500 text-xs">&rarr;</span>
+                                                <span className="text-xs text-slate-400 max-w-[120px] truncate">Found item</span>
+                                            </div>
+                                            <div className="flex items-center gap-4">
+                                                <div className="text-right">
+                                                    <span className="text-sm font-bold text-emerald-400">{(match.confidence_score * 100).toFixed(0)}%</span>
+                                                    <p className="text-[10px] text-slate-500">Confidence</p>
+                                                </div>
+                                                <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${
+                                                    match.status === "resolved" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
+                                                    match.status === "approved" ? "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20" :
+                                                    match.status === "rejected" ? "bg-rose-500/10 text-rose-400 border border-rose-500/20" :
+                                                    "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                                                }`}>
+                                                    {match.status}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- AUTH: LOGIN COMPONENT ---
+        const Login = ({ setToken, flashError, flashSuccess }) => {
+            const [username, setUsername] = useState("");
+            const [password, setPassword] = useState("");
+            const [loading, setLoading] = useState(false);
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setLoading(true);
+                try {
+                    const params = new URLSearchParams();
+                    params.append("username", username);
+                    params.append("password", password);
+                    
+                    const res = await axios.post("/api/auth/login", params, {
+                        headers: { "Content-Type": "application/x-www-form-urlencoded" }
+                    });
+                    
+                    localStorage.setItem("token", res.data.access_token);
+                    setToken(res.data.access_token);
+                    flashSuccess("Successfully signed in!");
+                    window.location.hash = "#/";
+                } catch (err) {
+                    flashError(err.response?.data?.detail || "Authentication failed. Try again.");
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            return (
+                <div className="max-w-md mx-auto py-16 animate-fade-in">
+                    <div className="bg-slate-900/60 border border-slate-800 p-8 rounded-2xl shadow-2xl backdrop-blur-md">
+                        <div className="text-center mb-6">
+                            <h2 className="text-3xl font-bold text-white mb-2">Welcome Back</h2>
+                            <p className="text-slate-400 text-sm">Access your matching dashboard and view reported items.</p>
+                        </div>
+
+                        <form onSubmit={handleSubmit} className="space-y-5">
+                            <div>
+                                <label className="block text-slate-300 text-sm font-semibold mb-2">Username</label>
+                                <div className="relative">
+                                    <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500">
+                                        <Icon name="user" className="w-4 h-4" />
+                                    </span>
+                                    <input 
+                                        type="text" 
+                                        required 
+                                        className="bg-slate-950 border border-slate-800 rounded-xl w-full py-2.5 pl-10 pr-4 text-white focus:outline-none focus:border-brand-500 text-sm" 
+                                        placeholder="Enter username"
+                                        value={username}
+                                        onChange={(e) => setUsername(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-slate-300 text-sm font-semibold mb-2">Password</label>
+                                <div className="relative">
+                                    <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500">
+                                        <Icon name="lock" className="w-4 h-4" />
+                                    </span>
+                                    <input 
+                                        type="password" 
+                                        required 
+                                        className="bg-slate-950 border border-slate-800 rounded-xl w-full py-2.5 pl-10 pr-4 text-white focus:outline-none focus:border-brand-500 text-sm" 
+                                        placeholder="Enter password"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+
+                            <button 
+                                type="submit" 
+                                disabled={loading}
+                                className="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 rounded-xl transition shadow-lg shadow-brand-600/30 flex justify-center items-center gap-2 text-sm disabled:opacity-50"
+                            >
+                                {loading ? "Signing in..." : "Log In"}
+                            </button>
+                        </form>
+
+                        <div className="text-center mt-6 text-sm text-slate-400">
+                            Don't have an account? <a href="#/register" className="text-brand-500 hover:underline">Sign up now</a>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- AUTH: REGISTER COMPONENT ---
+        const Register = ({ flashError, flashSuccess }) => {
+            const [username, setUsername] = useState("");
+            const [email, setEmail] = useState("");
+            const [password, setPassword] = useState("");
+            const [loading, setLoading] = useState(false);
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setLoading(true);
+                try {
+                    await axios.post("/api/auth/register", { username, email, password });
+                    flashSuccess("Registration successful! You can now log in.");
+                    window.location.hash = "#/login";
+                } catch (err) {
+                    flashError(err.response?.data?.detail || "Registration failed. Please check user details.");
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            return (
+                <div className="max-w-md mx-auto py-12 animate-fade-in">
+                    <div className="bg-slate-900/60 border border-slate-800 p-8 rounded-2xl shadow-2xl backdrop-blur-md">
+                        <div className="text-center mb-6">
+                            <h2 className="text-3xl font-bold text-white mb-2">Create Account</h2>
+                            <p className="text-slate-400 text-sm">Join to list and automatically match properties.</p>
+                        </div>
+
+                        <form onSubmit={handleSubmit} className="space-y-5">
+                            <div>
+                                <label className="block text-slate-300 text-sm font-semibold mb-2">Username</label>
+                                <div className="relative">
+                                    <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500">
+                                        <Icon name="user" className="w-4 h-4" />
+                                    </span>
+                                    <input 
+                                        type="text" 
+                                        required 
+                                        className="bg-slate-950 border border-slate-800 rounded-xl w-full py-2.5 pl-10 pr-4 text-white focus:outline-none focus:border-brand-500 text-sm" 
+                                        placeholder="Create a username"
+                                        value={username}
+                                        onChange={(e) => setUsername(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-slate-300 text-sm font-semibold mb-2">Email Address</label>
+                                <div className="relative">
+                                    <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500">
+                                        <Icon name="mail" className="w-4 h-4" />
+                                    </span>
+                                    <input 
+                                        type="email" 
+                                        required 
+                                        className="bg-slate-950 border border-slate-800 rounded-xl w-full py-2.5 pl-10 pr-4 text-white focus:outline-none focus:border-brand-500 text-sm" 
+                                        placeholder="Enter email address"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-slate-300 text-sm font-semibold mb-2">Password</label>
+                                <div className="relative">
+                                    <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500">
+                                        <Icon name="lock" className="w-4 h-4" />
+                                    </span>
+                                    <input 
+                                        type="password" 
+                                        required 
+                                        className="bg-slate-950 border border-slate-800 rounded-xl w-full py-2.5 pl-10 pr-4 text-white focus:outline-none focus:border-brand-500 text-sm" 
+                                        placeholder="Create a password"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+
+                            <button 
+                                type="submit" 
+                                disabled={loading}
+                                className="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 rounded-xl transition shadow-lg shadow-brand-600/30 flex justify-center items-center gap-2 text-sm disabled:opacity-50"
+                            >
+                                {loading ? "Registering..." : "Sign Up"}
+                            </button>
+                        </form>
+
+                        <div className="text-center mt-6 text-sm text-slate-400">
+                            Already registered? <a href="#/login" className="text-brand-500 hover:underline">Log in here</a>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- LOST ITEMS LISTING & REPORT COMPONENT ---
+        const LostItems = ({ token, flashError, flashSuccess }) => {
+            const [items, setItems] = useState([]);
+            const [showForm, setShowForm] = useState(false);
+            const [name, setName] = useState("");
+            const [category, setCategory] = useState("");
+            const [description, setDescription] = useState("");
+            const [dateLost, setDateLost] = useState(getLocalDateTimeString());
+            const [location, setLocation] = useState("");
+            const [image, setImage] = useState(null);
+            const [loading, setLoading] = useState(false);
+
+            // Re-initialize date whenever form is opened
+            useEffect(() => {
+                if (showForm) {
+                    setDateLost(getLocalDateTimeString());
+                }
+            }, [showForm]);
+
+            useEffect(() => {
+                fetchItems();
+            }, []);
+
+            const fetchItems = async () => {
+                try {
+                    const res = await axios.get("/api/items/lost/my");
+                    setItems(res.data);
+                } catch (err) {
+                    flashError("Could not retrieve your reported lost items.");
+                }
+            };
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setLoading(true);
+                
+                if (!dateLost) {
+                    flashError("Please enter a valid date and time.");
+                    setLoading(false);
+                    return;
+                }
+                const parsedDate = new Date(dateLost);
+                if (isNaN(parsedDate.getTime())) {
+                    flashError("Please enter a valid date and time.");
+                    setLoading(false);
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append("name", name);
+                formData.append("category", category);
+                formData.append("description", description);
+                formData.append("date_lost", parsedDate.toISOString());
+                formData.append("location", location);
+                if (image) {
+                    formData.append("image", image);
+                }
+
+                try {
+                    await axios.post("/api/items/lost", formData, {
+                        headers: { "Content-Type": "multipart/form-data" }
+                    });
+                    
+                    flashSuccess("Lost item report logged successfully!");
+                    // Reset
+                    setName("");
+                    setCategory("");
+                    setDescription("");
+                    setDateLost(getLocalDateTimeString());
+                    setLocation("");
+                    setImage(null);
+                    setShowForm(false);
+                    fetchItems();
+                } catch (err) {
+                    flashError(err.response?.data?.detail || "Could not log lost item. Please review fields.");
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            return (
+                <div className="space-y-8 animate-fade-in">
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <h2 className="text-3xl font-extrabold tracking-tight text-white mb-2">My Lost Item Reports</h2>
+                            <p className="text-slate-400">File a claim and upload pictures. We'll compare it against incoming logs.</p>
+                        </div>
+                        <button 
+                            onClick={() => setShowForm(!showForm)} 
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-2.5 rounded-xl transition flex items-center gap-2 text-sm"
+                        >
+                            <Icon name={showForm ? "xCircle" : "plus"} /> {showForm ? "Cancel Report" : "Report Lost Item"}
+                        </button>
+                    </div>
+
+                    {showForm && (
+                        <div className="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl max-w-2xl mx-auto shadow-2xl">
+                            <h3 className="text-xl font-bold text-white mb-4">New Lost Item Report</h3>
+                            <form onSubmit={handleSubmit} className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-slate-300 text-xs font-semibold mb-1">Item Name</label>
+                                        <input 
+                                            type="text" required 
+                                            className="bg-slate-950 border border-slate-800 rounded-lg w-full p-2.5 text-white focus:outline-none focus:border-blue-500 text-sm" 
+                                            placeholder="e.g. Leather Wallet"
+                                            value={name} onChange={(e) => setName(e.target.value)}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-slate-300 text-xs font-semibold mb-1">Category</label>
+                                        <select 
+                                            required 
+                                            className="bg-slate-950 border border-slate-800 rounded-lg w-full p-2.5 text-white focus:outline-none focus:border-blue-500 text-sm"
+                                            value={category} onChange={(e) => setCategory(e.target.value)}
+                                        >
+                                            <option value="">Select Category</option>
+                                            <option value="Electronics">Electronics (Phone, Laptop, Charger)</option>
+                                            <option value="Documents & IDs">Documents & IDs (Passport, Card, License)</option>
+                                            <option value="Bags & Luggage">Bags & Luggage (Backpack, Purse, Suitcase)</option>
+                                            <option value="Accessories & Jewelry">Accessories & Jewelry (Watch, Wallet, Ring)</option>
+                                            <option value="Keys">Keys</option>
+                                            <option value="Clothing & Footwear">Clothing & Footwear</option>
+                                            <option value="Books & Stationery">Books & Stationery (Notebook, Textbook)</option>
+                                            <option value="Bottles & Tumblers">Bottles & Tumblers (Water Bottle, Flask)</option>
+                                            <option value="Sports & Outdoors">Sports & Outdoors (Gym Gear, Skateboard)</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-slate-300 text-xs font-semibold mb-1">Detailed Description (AI matching uses this!)</label>
+                                    <textarea 
+                                        required rows="3"
+                                        className="bg-slate-950 border border-slate-800 rounded-lg w-full p-2.5 text-white focus:outline-none focus:border-blue-500 text-sm" 
+                                        placeholder="Provide specific marks, brand, colors, internal items, and text labels..."
+                                        value={description} onChange={(e) => setDescription(e.target.value)}
+                                    ></textarea>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-slate-300 text-xs font-semibold mb-1">Date Lost</label>
+                                        <input 
+                                            type="datetime-local" required 
+                                            className="bg-slate-950 border border-slate-800 rounded-lg w-full p-2.5 text-white focus:outline-none focus:border-blue-500 text-sm"
+                                            value={dateLost} onChange={(e) => setDateLost(e.target.value)}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-slate-300 text-xs font-semibold mb-1">Location Lost</label>
+                                        <input 
+                                            type="text" required 
+                                            className="bg-slate-950 border border-slate-800 rounded-lg w-full p-2.5 text-white focus:outline-none focus:border-blue-500 text-sm" 
+                                            placeholder="e.g. Science Lab Room 402"
+                                            value={location} onChange={(e) => setLocation(e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-slate-300 text-xs font-semibold mb-1">Upload Photo (AI compares this using CLIP!)</label>
+                                    <input 
+                                        type="file" accept="image/*"
+                                        className="bg-slate-950 border border-slate-800 rounded-lg w-full p-2 text-white focus:outline-none text-sm"
+                                        onChange={(e) => setImage(e.target.files[0])}
+                                    />
+                                </div>
+
+                                <button 
+                                    type="submit" disabled={loading}
+                                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl transition text-sm disabled:opacity-50"
+                                >
+                                    {loading ? "Submitting Case..." : "Register Lost Report"}
+                                </button>
+                            </form>
+                        </div>
+                    )}
+
+                    {/* Listing */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {items.length === 0 ? (
+                            <div className="col-span-full text-center py-12 text-slate-500">
+                                You have not registered any lost items. Click "Report Lost Item" to log one!
+                            </div>
+                        ) : (
+                            items.map(item => (
+                                <div key={item.id} className="bg-slate-900/60 border border-slate-800/80 rounded-2xl overflow-hidden shadow-xl hover:border-slate-700 transition flex flex-col">
+                                    <div className="h-48 bg-slate-950 relative border-b border-slate-800">
+                                        {item.image_path ? (
+                                            <img src={"/" + item.image_path} alt={item.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <div className="w-full h-full flex flex-col items-center justify-center text-slate-600 gap-2">
+                                                <Icon name="tag" className="w-12 h-12" />
+                                                <span className="text-xs">No image provided</span>
+                                            </div>
+                                        )}
+                                        <span className={`absolute top-3 right-3 text-[10px] uppercase font-bold px-2 py-0.5 rounded-full border ${
+                                            item.status === "claimed" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" :
+                                            item.status === "matched" ? "bg-purple-500/10 text-purple-400 border-purple-500/20" :
+                                            "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                                        }`}>
+                                            {item.status}
+                                        </span>
+                                        <span className="absolute bottom-3 left-3 bg-slate-950/80 px-2 py-1 rounded text-[10px] text-slate-300 border border-slate-800">
+                                            {item.category}
+                                        </span>
+                                    </div>
+
+                                    <div className="p-5 flex-grow space-y-3">
+                                        <h3 className="text-lg font-bold text-white">{item.name}</h3>
+                                        <p className="text-slate-400 text-xs line-clamp-3 leading-relaxed">{item.description}</p>
+                                        
+                                        <div className="border-t border-slate-800/80 pt-3 space-y-1.5">
+                                            <div className="flex items-center text-slate-400 text-xs gap-2">
+                                                <Icon name="mapPin" className="w-3.5 h-3.5 text-blue-500" />
+                                                <span>{item.location}</span>
+                                            </div>
+                                            <div className="flex items-center text-slate-400 text-xs gap-2">
+                                                <Icon name="calendar" className="w-3.5 h-3.5 text-blue-500" />
+                                                <span>{new Date(item.date_lost).toLocaleString()}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        // --- FOUND ITEMS LISTING & REPORT COMPONENT ---
+        const FoundItems = ({ token, flashError, flashSuccess }) => {
+            const [items, setItems] = useState([]);
+            const [showForm, setShowForm] = useState(false);
+            const [description, setDescription] = useState("");
+            const [dateFound, setDateFound] = useState(getLocalDateTimeString());
+            const [location, setLocation] = useState("");
+            const [image, setImage] = useState(null);
+            const [loading, setLoading] = useState(false);
+
+            // Re-initialize date whenever form is opened
+            useEffect(() => {
+                if (showForm) {
+                    setDateFound(getLocalDateTimeString());
+                }
+            }, [showForm]);
+
+            useEffect(() => {
+                fetchItems();
+            }, []);
+
+            const fetchItems = async () => {
+                try {
+                    const res = await axios.get("/api/items/found/my");
+                    setItems(res.data);
+                } catch (err) {
+                    flashError("Could not retrieve your reported found items.");
+                }
+            };
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setLoading(true);
+                
+                if (!dateFound) {
+                    flashError("Please enter a valid date and time.");
+                    setLoading(false);
+                    return;
+                }
+                const parsedDate = new Date(dateFound);
+                if (isNaN(parsedDate.getTime())) {
+                    flashError("Please enter a valid date and time.");
+                    setLoading(false);
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append("description", description);
+                formData.append("date_found", parsedDate.toISOString());
+                formData.append("location", location);
+                if (image) {
+                    formData.append("image", image);
+                }
+
+                try {
+                    await axios.post("/api/items/found", formData, {
+                        headers: { "Content-Type": "multipart/form-data" }
+                    });
+                    
+                    flashSuccess("Found item logged! AI engine similarity check complete.");
+                    // Reset
+                    setDescription("");
+                    setDateFound(getLocalDateTimeString());
+                    setLocation("");
+                    setImage(null);
+                    setShowForm(false);
+                    fetchItems();
+                } catch (err) {
+                    flashError(err.response?.data?.detail || "Could not save found item.");
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            return (
+                <div className="space-y-8 animate-fade-in">
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <h2 className="text-3xl font-extrabold tracking-tight text-white mb-2">My Found Item Logs</h2>
+                            <p className="text-slate-400">Log items you've recovered to search for their owners via semantic vector match.</p>
+                        </div>
+                        <button 
+                            onClick={() => setShowForm(!showForm)} 
+                            className="bg-amber-600 hover:bg-amber-700 text-white font-semibold px-5 py-2.5 rounded-xl transition flex items-center gap-2 text-sm"
+                        >
+                            <Icon name={showForm ? "xCircle" : "plus"} /> {showForm ? "Cancel Log" : "Report Found Item"}
+                        </button>
+                    </div>
+
+                    {showForm && (
+                        <div className="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl max-w-2xl mx-auto shadow-2xl">
+                            <h3 className="text-xl font-bold text-white mb-4">New Found Item Log</h3>
+                            <form onSubmit={handleSubmit} className="space-y-4">
+                                <div>
+                                    <label className="block text-slate-300 text-xs font-semibold mb-1">Details & Description (Essential for AI text embeddings!)</label>
+                                    <textarea 
+                                        required rows="3"
+                                        className="bg-slate-950 border border-slate-800 rounded-lg w-full p-2.5 text-white focus:outline-none focus:border-amber-500 text-sm" 
+                                        placeholder="Describe the shape, branding labels, color, writing, contents, or style..."
+                                        value={description} onChange={(e) => setDescription(e.target.value)}
+                                    ></textarea>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-slate-300 text-xs font-semibold mb-1">Date Found</label>
+                                        <input 
+                                            type="datetime-local" required 
+                                            className="bg-slate-950 border border-slate-800 rounded-lg w-full p-2.5 text-white focus:outline-none focus:border-amber-500 text-sm"
+                                            value={dateFound} onChange={(e) => setDateFound(e.target.value)}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-slate-300 text-xs font-semibold mb-1">Location Found</label>
+                                        <input 
+                                            type="text" required 
+                                            className="bg-slate-950 border border-slate-800 rounded-lg w-full p-2.5 text-white focus:outline-none focus:border-amber-500 text-sm" 
+                                            placeholder="e.g. Library Hallway Shelf B"
+                                            value={location} onChange={(e) => setLocation(e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-slate-300 text-xs font-semibold mb-1">Upload Photo (Highly recommended for visual OpenCLIP comparisons!)</label>
+                                    <input 
+                                        type="file" accept="image/*"
+                                        className="bg-slate-950 border border-slate-800 rounded-lg w-full p-2 text-white focus:outline-none text-sm"
+                                        onChange={(e) => setImage(e.target.files[0])}
+                                    />
+                                </div>
+
+                                <button 
+                                    type="submit" disabled={loading}
+                                    className="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold py-2.5 rounded-xl transition text-sm disabled:opacity-50"
+                                >
+                                    {loading ? "Submitting Log..." : "Log Found Item & Trigger AI Matching"}
+                                </button>
+                            </form>
+                        </div>
+                    )}
+
+                    {/* Listing */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {items.length === 0 ? (
+                            <div className="col-span-full text-center py-12 text-slate-500">
+                                You have not registered any found items. Click "Report Found Item" to log one!
+                            </div>
+                        ) : (
+                            items.map(item => (
+                                <div key={item.id} className="bg-slate-900/60 border border-slate-800/80 rounded-2xl overflow-hidden shadow-xl hover:border-slate-700 transition flex flex-col">
+                                    <div className="h-48 bg-slate-950 relative border-b border-slate-800">
+                                        {item.image_path ? (
+                                            <img src={"/" + item.image_path} alt="Found item" className="w-full h-full object-cover" />
+                                        ) : (
+                                            <div className="w-full h-full flex flex-col items-center justify-center text-slate-600 gap-2">
+                                                <Icon name="tag" className="w-12 h-12" />
+                                                <span className="text-xs">No image provided</span>
+                                            </div>
+                                        )}
+                                        <span className={`absolute top-3 right-3 text-[10px] uppercase font-bold px-2 py-0.5 rounded-full border ${
+                                            item.status === "claimed" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" :
+                                            item.status === "matched" ? "bg-purple-500/10 text-purple-400 border-purple-500/20" :
+                                            "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                                        }`}>
+                                            {item.status}
+                                        </span>
+                                    </div>
+
+                                    <div className="p-5 flex-grow space-y-3">
+                                        <h3 className="text-lg font-bold text-white">Found Item #{item.id}</h3>
+                                        <p className="text-slate-400 text-xs line-clamp-3 leading-relaxed">{item.description}</p>
+                                        
+                                        <div className="border-t border-slate-800/80 pt-3 space-y-1.5">
+                                            <div className="flex items-center text-slate-400 text-xs gap-2">
+                                                <Icon name="mapPin" className="w-3.5 h-3.5 text-amber-500" />
+                                                <span>{item.location}</span>
+                                            </div>
+                                            <div className="flex items-center text-slate-400 text-xs gap-2">
+                                                <Icon name="calendar" className="w-3.5 h-3.5 text-amber-500" />
+                                                <span>{new Date(item.date_found).toLocaleString()}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        // --- MATCHES: AI VISUALIZER COMPONENT ---
+        const Matches = ({ token, flashError, flashSuccess }) => {
+            const [matches, setMatches] = useState([]);
+            const [selectedMatch, setSelectedMatch] = useState(null);
+
+            useEffect(() => {
+                fetchMatches();
+            }, []);
+
+            const fetchMatches = async () => {
+                try {
+                    const res = await axios.get("/api/matches/my");
+                    setMatches(res.data);
+                } catch (err) {
+                    flashError("Could not retrieve AI matches list.");
+                }
+            };
+
+            const handleStatusUpdate = async (matchId, newStatus) => {
+                try {
+                    await axios.put(`/api/matches/${matchId}/status`, { status: newStatus });
+                    flashSuccess(`Match status successfully updated to: ${newStatus}`);
+                    fetchMatches();
+                    if (selectedMatch && selectedMatch.id === matchId) {
+                        setSelectedMatch(prev => ({ ...prev, status: newStatus }));
+                    }
+                } catch (err) {
+                    flashError("Could not update match status.");
+                }
+            };
+
+            return (
+                <div className="space-y-8 animate-fade-in">
+                    <div>
+                        <h2 className="text-3xl font-extrabold tracking-tight text-white mb-2">AI Lost & Found Matches</h2>
+                        <p className="text-slate-400">Semantic connections flagged by sentence transformers and CLIP visual similarities.</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        {/* List Column */}
+                        <div className="lg:col-span-1 bg-slate-900/60 border border-slate-800/80 p-5 rounded-2xl shadow-xl h-fit space-y-4">
+                            <h3 className="text-lg font-bold text-white pb-3 border-b border-slate-850">Potential Matches</h3>
+                            
+                            <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
+                                {matches.length === 0 ? (
+                                    <div className="text-center py-8 text-slate-500 text-sm">
+                                        No active matches to display. Ensure items have overlapping keywords or features.
+                                    </div>
+                                ) : (
+                                    matches.map(m => (
+                                        <div 
+                                            key={m.id} 
+                                            onClick={() => setSelectedMatch(m)}
+                                            className={`p-4 rounded-xl border cursor-pointer transition flex flex-col gap-2 ${
+                                                selectedMatch?.id === m.id 
+                                                    ? "bg-brand-600/20 border-brand-500 shadow-md shadow-brand-500/10" 
+                                                    : "bg-slate-950 border-slate-850 hover:border-slate-700"
+                                            }`}
+                                        >
+                                            <div className="flex justify-between items-start">
+                                                <h4 className="text-sm font-semibold text-white truncate max-w-[130px]">
+                                                    Lost: {m.lost_item.name}
+                                                </h4>
+                                                <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                                                    {(m.confidence_score * 100).toFixed(0)}% Match
+                                                </span>
+                                            </div>
+                                            <p className="text-[11px] text-slate-400 truncate">
+                                                Found at: {m.found_item.location}
+                                            </p>
+                                            <div className="flex justify-between items-center mt-1 border-t border-slate-800/40 pt-2">
+                                                <span className="text-[10px] text-slate-500">{new Date(m.created_at).toLocaleDateString()}</span>
+                                                <span className={`text-[9px] uppercase font-extrabold px-2 py-0.5 rounded-full ${
+                                                    m.status === "resolved" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
+                                                    m.status === "approved" ? "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20" :
+                                                    m.status === "rejected" ? "bg-rose-500/10 text-rose-400 border border-rose-500/20" :
+                                                    "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                                                }`}>
+                                                    {m.status}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Visualizer Column */}
+                        <div className="lg:col-span-2 space-y-6">
+                            {selectedMatch ? (
+                                <div className="bg-slate-900/60 border border-slate-800/80 p-6 rounded-2xl shadow-2xl backdrop-blur-md space-y-6 animate-fade-in">
+                                    <div className="flex justify-between items-center border-b border-slate-850 pb-4">
+                                        <div>
+                                            <h3 className="text-xl font-bold text-white">Match Visual Comparison</h3>
+                                            <p className="text-slate-400 text-xs">Verify description alignment and item image features.</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <span className="text-2xl font-black text-emerald-400">{(selectedMatch.confidence_score * 100).toFixed(1)}%</span>
+                                            <p className="text-slate-500 text-[10px] uppercase font-bold">Similarity Index</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Visual Split Cards */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative">
+                                        {/* Connection Badge */}
+                                        <div className="hidden md:flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-900 border border-slate-700 p-2.5 rounded-full shadow-lg shadow-emerald-500/10 z-10 text-emerald-400 border-dashed">
+                                            <Icon name="shield" className="w-5 h-5 animate-pulse" />
+                                        </div>
+
+                                        {/* Lost side */}
+                                        <div className="bg-slate-950 border border-slate-850 p-4 rounded-xl space-y-3">
+                                            <div className="flex justify-between items-center pb-2 border-b border-slate-850">
+                                                <span className="text-xs uppercase font-extrabold text-blue-400 tracking-wider">Lost Report</span>
+                                                <span className="text-[10px] text-slate-500">Reported by {selectedMatch.lost_item.owner.username}</span>
+                                            </div>
+                                            <div className="h-40 bg-slate-900/80 rounded-lg overflow-hidden border border-slate-800">
+                                                {selectedMatch.lost_item.image_path ? (
+                                                    <img src={"/" + selectedMatch.lost_item.image_path} alt="Lost" className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <div className="w-full h-full flex flex-col items-center justify-center text-slate-600 text-xs">No image provided</div>
+                                                )}
+                                            </div>
+                                            <div>
+                                                <h4 className="font-bold text-white text-sm">{selectedMatch.lost_item.name}</h4>
+                                                <span className="text-[10px] bg-slate-900 px-2 py-0.5 rounded text-slate-400 inline-block mt-1">
+                                                    {selectedMatch.lost_item.category}
+                                                </span>
+                                                <p className="text-xs text-slate-400 mt-2 leading-relaxed h-16 overflow-y-auto pr-1">
+                                                    {selectedMatch.lost_item.description}
+                                                </p>
+                                            </div>
+                                            <div className="text-[11px] text-slate-500 space-y-1 border-t border-slate-850 pt-2">
+                                                <div><strong>Lost at:</strong> {selectedMatch.lost_item.location}</div>
+                                                <div><strong>Date lost:</strong> {new Date(selectedMatch.lost_item.date_lost).toLocaleString()}</div>
+                                            </div>
+                                        </div>
+
+                                        {/* Found side */}
+                                        <div className="bg-slate-950 border border-slate-850 p-4 rounded-xl space-y-3">
+                                            <div className="flex justify-between items-center pb-2 border-b border-slate-850">
+                                                <span className="text-xs uppercase font-extrabold text-amber-400 tracking-wider">Found Log</span>
+                                                <span className="text-[10px] text-slate-500">Logged by finder</span>
+                                            </div>
+                                            <div className="h-40 bg-slate-900/80 rounded-lg overflow-hidden border border-slate-800">
+                                                {selectedMatch.found_item.image_path ? (
+                                                    <img src={"/" + selectedMatch.found_item.image_path} alt="Found" className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <div className="w-full h-full flex flex-col items-center justify-center text-slate-600 text-xs">No image provided</div>
+                                                )}
+                                            </div>
+                                            <div>
+                                                <h4 className="font-bold text-white text-sm">Found Property Log</h4>
+                                                <span className="text-[10px] bg-slate-900 px-2 py-0.5 rounded text-slate-400 inline-block mt-1">
+                                                    AI Cross-Matched Case
+                                                </span>
+                                                <p className="text-xs text-slate-400 mt-2 leading-relaxed h-16 overflow-y-auto pr-1">
+                                                    {selectedMatch.found_item.description}
+                                                </p>
+                                            </div>
+                                            <div className="text-[11px] text-slate-500 space-y-1 border-t border-slate-850 pt-2">
+                                                <div><strong>Found at:</strong> {selectedMatch.found_item.location}</div>
+                                                <div><strong>Date found:</strong> {new Date(selectedMatch.found_item.date_found).toLocaleString()}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Action Bar */}
+                                    <div className="bg-slate-950 border border-slate-850 p-4 rounded-xl flex flex-col sm:flex-row justify-between items-center gap-4">
+                                        <div>
+                                            <span className="text-[10px] text-slate-500 uppercase font-extrabold">Current Match Status</span>
+                                            <div className="text-sm font-semibold text-white capitalize mt-0.5">{selectedMatch.status}</div>
+                                        </div>
+                                        <div className="flex gap-3">
+                                            {selectedMatch.status === "pending" && (
+                                                <>
+                                                    <button 
+                                                        onClick={() => handleStatusUpdate(selectedMatch.id, "approved")}
+                                                        className="bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition"
+                                                    >
+                                                        Approve Match
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => handleStatusUpdate(selectedMatch.id, "rejected")}
+                                                        className="bg-rose-950 hover:bg-rose-900 border border-rose-800 text-rose-300 text-xs font-semibold px-4 py-2 rounded-lg transition"
+                                                    >
+                                                        Reject Match
+                                                    </button>
+                                                </>
+                                            )}
+                                            {selectedMatch.status === "approved" && (
+                                                <button 
+                                                    onClick={() => handleStatusUpdate(selectedMatch.id, "resolved")}
+                                                    className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition flex items-center gap-1.5"
+                                                >
+                                                    <Icon name="checkCircle" className="w-4 h-4" /> Claim & Resolve Item
+                                                </button>
+                                            )}
+                                            {selectedMatch.status === "resolved" && (
+                                                <span className="text-emerald-400 text-xs font-bold bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20 flex items-center gap-1.5">
+                                                    <Icon name="checkCircle" className="w-4 h-4" /> Item Claimed & Case Resolved
+                                                </span>
+                                            )}
+                                            {selectedMatch.status === "rejected" && (
+                                                <span className="text-rose-400 text-xs font-bold bg-rose-500/10 px-3 py-1.5 rounded-lg border border-rose-500/20">
+                                                    Match Disapproved
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="bg-slate-900/40 border border-slate-900/80 p-16 rounded-2xl text-center text-slate-500">
+                                    <Icon name="bell" className="w-12 h-12 text-slate-700 mx-auto mb-4" />
+                                    <h3 className="text-lg font-bold text-slate-400">Match Detail Visualizer</h3>
+                                    <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
+                                        Select a potential matching case from the list on the left to load its semantic characteristics and visual comparison.
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- DEVELOPMENT: EMAIL INBOX SIMULATOR ---
+        const EmailInbox = () => {
+            const [emails, setEmails] = useState([]);
+            const [selectedEmail, setSelectedEmail] = useState("");
+
+            useEffect(() => {
+                fetchEmails();
+            }, []);
+
+            const fetchEmails = async () => {
+                try {
+                    const res = await axios.get("/api/mock-emails");
+                    setEmails(res.data);
+                    if (res.data.length > 0) {
+                        setSelectedEmail(res.data[0]);
+                    }
+                } catch (err) {
+                    console.error("Could not fetch simulated emails.");
+                }
+            };
+
+            return (
+                <div className="space-y-8 animate-fade-in">
+                    <div>
+                        <h2 className="text-3xl font-extrabold tracking-tight text-white mb-2">Simulated Email Inbox</h2>
+                        <p className="text-slate-400">Development Utility: Preview the HTML alert emails dispatched to lost item owners in real time.</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                        {/* List Panel */}
+                        <div className="lg:col-span-1 bg-slate-900/60 border border-slate-800 p-5 rounded-2xl h-fit space-y-4 shadow-xl">
+                            <div className="flex justify-between items-center pb-2 border-b border-slate-850">
+                                <h3 className="text-sm font-bold text-white">Dispatched Alerts</h3>
+                                <button onClick={fetchEmails} className="text-brand-500 text-xs hover:underline flex items-center gap-1">
+                                    Refresh
+                                </button>
+                            </div>
+
+                            <div className="space-y-2 max-h-[450px] overflow-y-auto pr-1">
+                                {emails.length === 0 ? (
+                                    <div className="text-center py-6 text-slate-500 text-xs">No email files logged. Trigger an AI match to send alerts!</div>
+                                ) : (
+                                    emails.map((file, i) => (
+                                        <div 
+                                            key={i} 
+                                            onClick={() => setSelectedEmail(file)}
+                                            className={`p-3 rounded-lg border text-left cursor-pointer transition ${
+                                                selectedEmail === file 
+                                                    ? "bg-brand-600/20 border-brand-500 text-white" 
+                                                    : "bg-slate-950 border-slate-850 text-slate-400 hover:text-white"
+                                            }`}
+                                        >
+                                            <div className="text-xs font-bold truncate">{file}</div>
+                                            <div className="text-[10px] text-slate-500 mt-1">Notification Dispatch</div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Preview Iframe Panel */}
+                        <div className="lg:col-span-3 bg-white rounded-2xl overflow-hidden border border-slate-800 h-[600px] shadow-2xl relative">
+                            {selectedEmail ? (
+                                <iframe 
+                                    src={`/api/mock-emails/${selectedEmail}`} 
+                                    className="w-full h-full border-none bg-slate-100"
+                                    title="HTML Email View"
+                                ></iframe>
+                            ) : (
+                                <div className="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center text-slate-500 text-center p-8">
+                                    <Icon name="mail" className="w-12 h-12 text-slate-800 mb-3" />
+                                    <h3 className="text-base font-bold text-slate-400">Preview HTML Mail</h3>
+                                    <p className="text-xs text-slate-600 mt-1">Click a matching alert file on the left side to preview its rendered formatting.</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Render App
+        const root = ReactDOM.createRoot(document.getElementById("root"));
+        root.render(<MainApp />);
+    </script>
+</body>
+</html>
