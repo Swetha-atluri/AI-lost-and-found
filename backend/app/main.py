@@ -242,7 +242,7 @@ def get_mock_email(filename: str):
 app.mount("/backend/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 # Serve frontend static assets if they exist
-static_dir = os.path.join(os.path.dirname(__file__), "..", "static")
+static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "frontend"))
 if os.path.exists(static_dir):
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
     
@@ -256,4 +256,4 @@ if os.path.exists(static_dir):
 else:
     @app.get("/")
     def root():
-        return {"message": "Welcome to AI Lost & Found Assistant Backend. Static folder not found."}
+        return {"message": "Welcome to AI Lost & Found Assistant Backend. Frontend folder not found."}
