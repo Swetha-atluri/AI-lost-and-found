@@ -1,75 +1,84 @@
-# 🤖 AI Lost & Found Assistant
+# AI Lost & Found Assistant
 
-An AI-powered Lost & Found web application that automatically matches lost and found items using text and image similarity. The system sends email notifications when a potential match is identified, making the recovery process faster and more efficient.
-
----
-
-## 🚀 Features
-
-- 🔐 JWT Authentication
-- 📝 Lost & Found Item Reporting
-- 🖼️ Image Upload Support
-- 🤖 AI-Based Text & Image Matching
-- ⚡ FAISS Semantic Search
-- 📧 Automatic Email Notifications
-- 📊 User Dashboard & Match History
+An AI-powered Lost & Found platform that uses **Natural Language Processing (NLP)** and **Computer Vision** to identify potential matches between lost and found items. The system combines text and image similarity with semantic vector search to make item recovery faster and more efficient.
 
 ---
 
-## 🛠️ Tech Stack
+## Overview
+
+The **AI Lost & Found Assistant** is designed to simplify the process of reporting, searching, and recovering lost items.
+
+Users can submit details and images of lost or found items through the application. The system processes the submitted information using AI-based text and image embeddings and searches for semantically similar items using **FAISS**.
+
+By combining textual and visual similarity, the application helps users identify potential matches more efficiently than traditional keyword-based searching.
+
+---
+
+## Features
+
+- **JWT-based Authentication** — Secure user registration and authentication.
+- **Lost & Found Reporting** — Submit and manage lost or found item reports.
+- **Image Upload** — Upload item images for visual similarity analysis.
+- **AI-Based Matching** — Identify potential matches using textual and visual information.
+- **Semantic Search** — Use FAISS for efficient vector similarity search.
+- **User Dashboard** — Manage submitted items and view relevant information.
+- **Match History** — Track previously identified potential matches.
+
+---
+
+## Technology Stack
 
 | Category | Technologies |
-|----------|--------------|
+|---|---|
 | Frontend | React, Vite, Tailwind CSS |
-| Backend | FastAPI (Python) |
+| Backend | FastAPI, Python |
 | Database | SQLite |
-| AI Models | Sentence Transformers, OpenCLIP |
+| NLP | Sentence Transformers |
+| Computer Vision | OpenCLIP, OpenCV |
 | Vector Search | FAISS |
-| Image Processing | OpenCV, Pillow |
+| Image Processing | Pillow |
 | Authentication | JWT |
 
 ---
 
-## 📂 Project Structure
+## System Workflow
 
 ```text
-backend/
-├── app/
-├── static/
-├── uploads/
-├── test_images/
-├── mock_emails/
-├── requirements.txt
-└── main.py
-```
-
----
-
-## ⚙️ Installation
-
-```bash
-git clone https://github.com/Swetha-atluri/AI-lost-and-found.git
-cd AI-lost-and-found/backend
-pip install -r requirements.txt
-uvicorn app.main:app --reload
-```
-
-Visit: **http://localhost:8000**
-
----
-
-## 📌 Key Highlights
-
-- AI-powered semantic matching for lost and found items.
-- Combines NLP and Computer Vision for accurate results.
-- Secure authentication with JWT.
-- Automated email notifications for matched items.
-
----
-
-## 👩‍💻 Author
-
-**Swetha Atluri**
-
-- GitHub: https://github.com/Swetha-atluri
-- LinkedIn: https://www.linkedin.com/in/swethaatluri
+                    User
+                     |
+                     v
+            +------------------+
+            |  Web Application  |
+            | React + Vite      |
+            +--------+---------+
+                     |
+                     v
+            +------------------+
+            |   FastAPI API    |
+            +--------+---------+
+                     |
+          +----------+----------+
+          |                     |
+          v                     v
+   +-------------+       +-------------+
+   | Text        |       | Image       |
+   | Processing  |       | Processing  |
+   +------+------+       +------+------+
+          |                     |
+          v                     v
+   Sentence                OpenCLIP
+   Transformers            Embeddings
+          |                     |
+          +----------+----------+
+                     |
+                     v
+              +-------------+
+              |    FAISS    |
+              |Vector Search|
+              +------+------+
+                     |
+                     v
+              Match Detection
+                     |
+                     v
+              Potential Match
